@@ -1,17 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-# load wavelengths file
-
-'''
-wav = np.loadtxt('spektri/val.dat', comments='#')
-# load one spectrum (spectrum number 123, for example)
-flux = np.loadtxt('spektri/123.dat', comments='#')
-# plot spectrum
-plt.plot(wav, flux, 'k-')
-plt.xlabel(r'Wavelength / $\mathrm{\AA}$')
-plt.ylabel(r'Normalized flux')
-plt.show()
-'''
 
 # load wavelengths file
 wav = np.loadtxt('spektri/val.dat', comments='#')

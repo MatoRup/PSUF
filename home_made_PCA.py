@@ -3,11 +3,12 @@ import numpy as np
 # 2. Sprogramirajte metodo PCA in kodo priložite kot tekst na koncu v poročilo
 # rešitev https://www.youtube.com/watch?v=52d7ha-GdV8
 
-class PCA:
+class PCA_home:
 
     def __init__(self, n_components):
         self.n_components = n_components
         self.compoents = None
+        self.eigenvalus1 = None
         self.mean = None
 
     def fit(self,X):
@@ -24,6 +25,7 @@ class PCA:
         indexes = np.argsort(eigenvalus)[::-1]
         eigenvalus = eigenvalus[indexes]
         eigenvector = eigenvectors[indexes]
+        self.eigenvalus1 = eigenvalus
         # storing
         self.compoents = eigenvectors[0:self.n_components]
 
