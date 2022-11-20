@@ -28,14 +28,14 @@ def plot_train_history(history, title):
     plt.plot(epochs, val_loss, 'r', label='Validation loss')
     plt.title(title)
     plt.legend()
-    plt.savefig('/Slike/'+title+'.png')
+    plt.savefig('Slike/2'+title+'.png')
     plt.show()
 
 def TF_model(optimizer='adam', neurons1=200,neurons2=100, learning_rate=0.001):
     model = Sequential ()
     model.add(Dense (neurons1, activation ='sigmoid', input_shape =(400,)))
     model.add(Dense (neurons2, activation ='sigmoid'))
-    model.add(Dense (1, activation ='sigmoid'))
+    model.add(Dense (2, activation ='sigmoid'))
 
     if optimizer == 'adam':
         opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
@@ -48,19 +48,18 @@ def TF_model(optimizer='adam', neurons1=200,neurons2=100, learning_rate=0.001):
 
 
 lam = ['500','505','700','900']
-
 DATA = np.zeros((4,100000, 400))
 
 for j in range(4):
-    DATA[j] = np.load('/DataK/intensity'+lam[j]+'noise0.npy')
-Kvalues = np.load('/DataK/Kvalues.npy')
-theta=  np.load('/DataK/theta0.npy')
+    DATA[j] = np.load('DataK13_pp/intensity'+lam[j]+'noise0.npy')
+Kvalues = np.load('DataK13_pp/Kvalues.npy')
+theta=  np.load('DataK13_pp/theta0.npy')
 
 figure = plt.subplots(figsize=(10, 6),constrained_layout=True)
 plt.plot(np.linspace(0,1.20,400),DATA[0,0,:])
 plt.ylabel('$I(t)$')
 plt.xlabel('$t$')
-plt.savefig('Slike/example1k.png')
+plt.savefig('Slike/example2k.png')
 plt.show()
 
 predic_star = 90000
@@ -85,7 +84,7 @@ batches = [10, 30]
 epoch_values = [10, 20]
 optimizers = ['adam', 'SGD']
 neuron1_list = [250, 200]
-neuron2_list = [100, 50]
+neuron2_list = [250, 200]
 lr_values = [0.001 ]
 
 
@@ -154,37 +153,12 @@ for kfold, (train, test) in enumerate(KFold(n_splits=10, shuffle=True).split(X, 
     # run the model
     model.fit(X_train,y_train, epochs=res['epochs'], batch_size=res['batch_size'], validation_data=(X_test,y_test))
     eval = model.evaluate(X[test], y[test])
-    model.save_weights(f'weightK\wg_{kfold}s'+str(eval)+'.h5')
+    model.save_weights(f'weightK\2kwg_{kfold}s'+str(eval)+'.h5')
 
-#Šum#
 
-lam = ['500','505','700','900']
+y_predict_predic =seq_model.predict(X_predict)
 
-DATA = np.zeros((4,100000, 400))
-
-for j in range(4):
-    DATA[j] = np.load('/DataK/intensity'+lam[j]+'noise100.npy')
-Kvalues = np.load('/DataK/Kvalues.npy')
-theta=  np.load('/DataK/theta0.npy')
 
 predic_star = 90000
 MaxK = np.max(Kvalues)
 Kvalues_norm=Kvalues/MaxK
-
-
-
-X_train, X_test, y_train, y_test = train_test_split( DATA[0,:predic_star,:], Kvalues_norm[:predic_star], test_size=0.20, random_state=42)
-
-
-model = TF_model(optimizer=j, neurons1=res['neurons2'],neurons2=res['neurons2'], learning_rate=res['learning_rate'])
-History = model.fit(X_train,y_train, epochs=res['epochs'], batch_size=res['batch_size'], validation_data=(X_test,y_test))
-plot_train_history(History, 'Multi-Step Training and validation loss')
-y_predict_predic = model.predict(X_predict)
-figure = plt.subplots(figsize=(10, 6),constrained_layout=True)
-plt.scatter(y_predict_rela*MaxK,y_predict_predic*MaxK,s=1)
-plt.plot([0,2e-11],[0,2e-11], c='r')
-plt.ylabel('$K_{predvideni}$')
-plt.xlabel('$K_{pravi}$')
-plt.ylim([0, 2.3e-11])
-plt.savefig('Slike/'+'BestGVresultK1'+j+'.png')
-plt.show()
