@@ -38,19 +38,19 @@ def model_LSTM(nevr,opti,time_steps_predictor,num):
     model_LSTM = tf.keras.models.Sequential()
     model_LSTM.add(LSTM(16, activation='tanh',input_shape=(time_steps_predictor,3)))
     for z in range(num):
-    	model_rnn.add(Dense(nevr, activation='tanh'))
+    	model_LSTM.add(Dense(nevr, activation='tanh'))
     model_LSTM.add(Dense(3))
     model_LSTM.compile(loss='mean_squared_error', optimizer=opti)
     return model_LSTM
 
 def model_GRU(nevr,opti,time_steps_predictor,num):
-    model_GRU = tf.keras.models.Sequential()
-    model_GRU.add(GRU(16, activation='tanh',input_shape=(time_steps_predictor,3)))
+    model_gru = tf.keras.models.Sequential()
+    model_gru.add(GRU(16, activation='tanh',input_shape=(time_steps_predictor,3)))
     for z in range(num):
-    	model_rnn.add(Dense(nevr, activation='tanh'))
-    model_GRU.add(Dense(3))
-    model_GRU.compile(loss='mean_squared_error', optimizer=opti)
-    return model_GRU
+    	model_gru.add(Dense(nevr, activation='tanh'))
+    model_gru.add(Dense(3))
+    model_gru.compile(loss='mean_squared_error', optimizer=opti)
+    return model_gru
 
 
 
@@ -104,14 +104,15 @@ def plot_series(Y_real,Y_predicted,save,nn=['nevronska mreža']):
     plt.savefig('Slike/'+save+'.png')
 
 def predict(model,num_pedict,num_starih,n=0):
-    Y_predicted = np.zeros((num_pedict,3))
     if np.isscalar(num_starih[0]):
         l=1
+        Y_predicted = np.zeros((num_pedict+l,3))
     else:
-        l = len(num_starih[:,0])-n
+        l = len(num_starih[:,0])
+        Y_predicted = np.zeros((num_pedict+l,3))
     Y_predicted[:l] = num_starih
-    for z in range(num_pedict-l+n):
-        Y_predicted[z+l+n] = model.predict(Y_predicted[z:z+l].reshape((1,l,3)))
+    for z in range(num_pedict):
+        Y_predicted[z+l] = model.predict(Y_predicted[z:z+l-n].reshape((1,l-n,3)))
 
     return Y_predicted
 
@@ -157,8 +158,8 @@ def GS(fun,input,target,params):
     return podatki
 
 def E(X_n,X_r):
-    s = np.average((X_n-X_r)**2)
-    return np.sqrt(s)
+    s = np.average(np.abs(X_n-X_r))
+    return s
 
 
 
@@ -190,7 +191,7 @@ print(X.shape)
 
 early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_loss',patience=20, verbose=0, mode='min')
 reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss',factor=0.2,patience=5, min_lr=0.0001)
-if True:
+if False:
     model = make_model()
 
     history = model.fit(X, Y, epochs=200, batch_size=1024,validation_split=0.2,callbacks=[early_stop,reduce_lr])
@@ -206,7 +207,7 @@ if True:
 
 ###tri NN##
 
-if True:
+if False:
     #X,Y = split_sequences(normalized[:Nend],time_steps_predictor)
     new_order = np.random.choice(range(X.shape[0]),X.shape[0],replace=False)
 
@@ -259,6 +260,8 @@ best_epochs = rezult['epochs'][best]
 best_ner = rezult['nerv'][best]
 best_opti = rezult['opti'][best]
 best_num = rezult['num'][best]
+
+
 model_rnn = model_RNN(best_ner,best_opti,time_steps_predictor,best_num)
 history = model_rnn.fit(X_rnn, Y_rnn, epochs=best_epochs, validation_split=0.3)
 plot_train_history(history,'loss_plot_RNN')
@@ -423,9 +426,8 @@ def dalsi(n):
 
     X_rnn_long,Y_rnn_long = split_sequences(normalized[:Nend],time_steps_predictor)
 
-
     Y_rnn_long = Y_rnn_long[n:]
-    X_rnn_long = Y_rnn_long[:n]
+    X_rnn_long = X_rnn_long[:-1*n]
 
     new_order = np.random.choice(range(X_rnn_long.shape[0]),X_rnn_long.shape[0],replace=False)
 
@@ -435,14 +437,14 @@ def dalsi(n):
 
     model_rnn_long = model_LSTM(best_ner, best_opti ,time_steps_predictor,best_num)
 
-    history = model_rnn_long.fit(X_rnn_long, Y_rnn_long, epochs=best_epochs, validation_split=0.3)
+    history = model_rnn_long.fit(X_rnn_long, Y_rnn_long, epochs=20, validation_split=0.3)
     plot_train_history(history,'loss_plot_RNN_long'+str(n))
 
 
     Y_predicted_rnn = predict(model_rnn_long,1000,normalized[Nend+1:Nend+17+n],n=n)
 
-    plot_series(data[Nend+17+n:Nend+1001],scaler.inverse_transform(Y_predicted_rnn[16+n:]),'series_plot_RNN_long_steps'+str(n))
-    return data[Nend+17+n:Nend+1001],scaler.inverse_transform(Y_predicted_rnn[16+n:])
+    plot_series(data[Nend+17+n:Nend+1017+n],scaler.inverse_transform(Y_predicted_rnn[16+n:]),'series_plot_RNN_long_steps'+str(n))
+    return data[Nend+17+n:Nend+1017+n],scaler.inverse_transform(Y_predicted_rnn[16+n:])
 
 y2,d2 = dalsi(2)
 y5,d5 = dalsi(5)
@@ -450,6 +452,7 @@ y10,d10 = dalsi(10)
 y50,d50 = dalsi(50)
 pod = [(y2,d2),(y5,d5),(y10,d10),(y50,d50)]
 labe=['2 koraka naprej','5 koraka naprej','10 koraka naprej','50 koraka naprej']
+s = ['solid','dashed','dashdot','--','-.']
 
 figure = plt.subplots(figsize=(10, 6),constrained_layout=True)
 for stev in range(4):
